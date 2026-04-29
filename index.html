@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DJ Set Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',monospace;background:#111008;color:#e0d090;min-height:100vh;font-size:13px}
+header{padding:1.1rem 1.5rem;border-bottom:1px solid #2a2010;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.title{font-size:0.65rem;letter-spacing:.2em;color:#8a7040;text-transform:uppercase}
+.title b{display:block;font-size:.95rem;letter-spacing:.1em;color:#f0e080;font-weight:normal;margin-bottom:3px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px}
+.leg{display:flex;align-items:center;gap:5px;font-size:.58rem;color:#8a7840;white-space:nowrap}
+.ldot{width:7px;height:7px;border-radius:50%}
+
+.layout{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 60px)}
+.pane{overflow-y:auto;border-right:1px solid #221a08}
+.pane:last-child{border:none;display:flex;flex-direction:column}
+
+.pane-head{position:sticky;top:0;background:#111008;padding:.8rem 1.2rem .6rem;border-bottom:1px solid #221a08;z-index:10}
+.ph-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.ph-label{font-size:.58rem;letter-spacing:.2em;color:#a09050;text-transform:uppercase}
+.ph-ct{font-size:.58rem;color:#706030}
+.filters{display:flex;flex-wrap:wrap;gap:4px}
+.fb{font-size:.55rem;padding:2px 7px;border:1px solid #302818;background:transparent;color:#907840;border-radius:2px;cursor:pointer;letter-spacing:.05em;transition:all .1s}
+.fb:hover,.fb.on{color:#f0d050;border-color:#605020;background:#201808}
+
+.body{padding:.8rem 1.2rem}
+
+.sect-head{font-size:.55rem;letter-spacing:.15em;color:#806030;margin:.8rem 0 .3rem;padding-bottom:2px;border-bottom:1px solid #201808}
+.row{display:flex;align-items:center;gap:7px;padding:6px 7px;margin-bottom:1px;border:1px solid transparent;border-radius:2px;cursor:pointer;transition:background .1s}
+.row:hover{background:#181208;border-color:#2a2010}
+.row.dim{opacity:.3;cursor:default;pointer-events:none}
+.bv{font-size:.7rem;font-weight:bold;min-width:30px;text-align:right;color:#e8c040;font-variant-numeric:tabular-nums}
+.bv.uk{font-weight:normal;font-size:.6rem;color:#504030}
+.ad{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ti{flex:1;min-width:0}
+.tn{font-size:.72rem;color:#e0cc80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ta{font-size:.58rem;color:#806040;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab{font-size:.55rem;color:#504030;padding:2px 6px;border:1px solid #2a2010;border-radius:2px;flex-shrink:0;background:transparent;cursor:pointer}
+.ab:hover{color:#e8c040;border-color:#604820}
+
+.no-bpm-toggle{font-size:.55rem;color:#806040;letter-spacing:.1em;cursor:pointer;margin:.8rem 0 .3rem;display:block}
+.no-bpm-toggle:hover{color:#c0a060}
+.no-bpm-inner{display:none}
+.no-bpm-inner.open{display:block}
+
+/* right pane */
+.set-body{flex:1;overflow-y:auto;padding:.8rem 1.2rem}
+.set-row{display:flex;align-items:center;gap:7px;padding:6px 7px;margin-bottom:1px;background:#161008;border:1px solid #201808;border-radius:2px}
+.sp{font-size:.58rem;color:#605030;min-width:16px;font-variant-numeric:tabular-nums}
+.sb{font-size:.7rem;font-weight:bold;min-width:30px;text-align:right;color:#f0e060;font-variant-numeric:tabular-nums}
+.mv{display:flex;flex-direction:column;gap:0}
+.mb{font-size:.5rem;color:#504030;background:transparent;border:none;cursor:pointer;padding:1px 3px;line-height:1.2;transition:color .1s}
+.mb:hover{color:#e8c040}
+.rb{font-size:.58rem;color:#402818;background:transparent;border:1px solid transparent;border-radius:2px;padding:2px 5px;cursor:pointer;transition:all .1s;flex-shrink:0}
+.rb:hover{color:#d04030;border-color:#401810}
+
+.tgap{display:flex;align-items:center;gap:8px;padding:2px 7px 2px 48px;margin-bottom:1px}
+.tbar{height:1px;flex:1}
+.tlbl{font-size:.6rem;font-variant-numeric:tabular-nums;min-width:50px;white-space:nowrap}
+
+.empty{padding:2.5rem 1rem;text-align:center;color:#504030;font-size:.68rem;line-height:2.2}
+
+.ctrls{display:flex;gap:6px;flex-wrap:wrap}
+.cb{font-size:.58rem;letter-spacing:.08em;color:#907840;padding:3px 9px;border:1px solid #302818;border-radius:2px;background:transparent;cursor:pointer;transition:all .1s}
+.cb:hover{color:#f0d050;border-color:#605020}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #221a08;background:#0d0b06;flex-shrink:0}
+.st{padding:.6rem .8rem;text-align:center}
+.sv{font-size:1rem;color:#f0e060;font-variant-numeric:tabular-nums}
+.sl{font-size:.52rem;color:#706030;letter-spacing:.12em;margin-top:2px}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:#2a2010;border-radius:2px}
+</style>
+</head>
+<body>
+<header>
+<div class="title"><b>West African Funk — DJ Set Planner</b><span id="lib-sub"></span></div>
+<div class="legend" id="legend"></div>
+</header>
+<div class="layout">
+<div class="pane" id="lib-pane">
+  <div class="pane-head">
+    <div class="ph-row">
+      <span class="ph-label">Library</span>
+      <span class="ph-ct" id="lib-ct"></span>
+    </div>
+    <div class="filters" id="filters"></div>
+  </div>
+  <div class="body" id="lib-body"></div>
+</div>
+<div class="pane">
+  <div class="pane-head">
+    <div class="ph-row">
+      <span class="ph-label">Set</span>
+      <span class="ph-ct" id="set-ct">0 tracks</span>
+    </div>
+    <div class="ctrls">
+      <button class="cb" onclick="autoSet()">Auto Build ↗</button>
+      <button class="cb" onclick="clearSet()">
+        <button class="cb" onclick="exportiTunes()">♫ Export to Music.app</button>Clear</button>
+    </div>
+  </div>
+  <div class="set-body" id="set-body"><div class="empty">click tracks to build your set<br>or hit auto build</div></div>
+  <div class="stats">
+    <div class="st"><div class="sv" id="s0">0</div><div class="sl">TRACKS</div></div>
+    <div class="st"><div class="sv" id="s1">—</div><div class="sl">DURATION</div></div>
+    <div class="st"><div class="sv" id="s2">—</div><div class="sl">BPM RANGE</div></div>
+    <div class="st"><div class="sv" id="s3">—</div><div class="sl">AVG BPM</div></div>
+  </div>
+</div>
+</div>
+
+<script src="tracks.js"></script>
+<script>
+// artists defined in tracks.js
+
+funcfunction exportiTunes(){
+  if(!setList.length){alert('Add some tracks to your set first!');return;}
+  const name = prompt('Playlist name:', 'DJ Set ' + new Date().toLocaleDateString());
+  if(!name) return;
+
+  const lines = setList.map(t => {
+    const artist = (ARTISTS[t.a]||{}).n || t.a;
+    const escaped_a = artist.replace(/"/g,'\\"');
+    const escaped_n = t.n.replace(/"/g,'\\"');
+    return `    set found to (every file track of library playlist 1 whose artist is "${escaped_a}" and name is "${escaped_n}")
+    if (count of found) > 0 then duplicate (item 1 of found) to newPlaylist`;
+  }).join('\n');
+
+  const script = `tell application "Music"
+    set newPlaylist to make new playlist with properties {name:"${name.replace(/"/g,'\\"')}"}
+${lines}
+    activate
+end tell`;
+
+  const blob = new Blob([script], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/[^a-z0-9 _-]/gi,'_') + '.applescript';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  alert('Downloaded! Open the .applescript file in Script Editor (or double-click it) and hit Run to create the playlist in Music.app.');
+}
+ction esc(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<script>// tracks loaded from tracks.js</script>
+<script>
+let setList = [], activeFilter = 'ALL';
+
+function tColor(d){
+  const a=Math.abs(d);
+  return a<=2?'#4a7a5a':a<=5?'#7a6a20':a<=10?'#7a4020':'#6a2010';
+}
+function fDur(s){return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0')}
+function fTotal(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return h>0?h+'h '+m+'m':m+':'+sc.toString().padStart(2,'0')}
+
+function initLegend(){
+  document.getElementById('legend').innerHTML = Object.entries(ARTISTS).map(([k,v])=>
+    `<div class="leg"><div class="ldot" style="background:${v.c}"></div>${v.n}</div>`).join('');
+}
+
+const FILTER_GROUPS = {
+  'ALL': null,
+  'Core 3': ['WO','LS','CB'],
+  'African': ['WO','LS','CB','IS','AM','DN','AX','DK'],
+  'Funk': ['OR','CB','CR','EK','GU'],
+  'Electronic': ['DP','HC','KT','LC','PL','BO','FL'],
+  'World Groove': ['KB','GJ','TM','MT','CI'],
+  'Has BPM': 'bpm',
+};
+
+function initFilters(){
+  document.getElementById('filters').innerHTML = Object.keys(FILTER_GROUPS).map(k=>
+    `<button class="fb${activeFilter===k?' on':''}" onclick="setFilter('${k}')">${k}</button>`).join('');
+}
+
+function setFilter(f){activeFilter=f;initFilters();renderLib();}
+
+function renderLib(){
+  const inSet = new Set(setList.map(t=>t.id));
+  let pool = TRACKS.filter(t=>!inSet.has(t.id));
+  const fg = FILTER_GROUPS[activeFilter];
+  if(fg==='bpm') pool=pool.filter(t=>t.b!=null);
+  else if(Array.isArray(fg)) pool=pool.filter(t=>fg.includes(t.a));
+
+  const known = pool.filter(t=>t.b!=null).sort((a,b)=>a.b-b.b);
+  const unknown = pool.filter(t=>t.b==null);
+
+  document.getElementById('lib-ct').textContent = pool.length + ' tracks';
+
+  // Group known by 10-BPM bands
+  const bands = {};
+  known.forEach(t=>{const k=Math.floor(t.b/10)*10;(bands[k]=bands[k]||[]).push(t);});
+
+  let html='';
+  Object.keys(bands).sort((a,b)=>+a-+b).forEach(bk=>{
+    html+=`<div class="sect-head">${bk}s BPM</div>`;
+    bands[bk].forEach(t=>{
+      const a=ARTISTS[t.a];
+      html+=`<div class="row" onclick="add(${t.id})">
+        <span class="bv">${t.b}</span>
+        <div class="ad" style="background:${a.c}"></div>
+        <div class="ti"><div class="tn">${t.n}</div><div class="ta">${a.n}</div></div>
+        <button class="ab" onclick="event.stopPropagation();add(${t.id})">+</button>
+      </div>`;
+    });
+  });
+
+  if(unknown.length && activeFilter!=='Has BPM'){
+    // Group unknown by artist
+    const byArtist = {};
+    unknown.forEach(t=>{(byArtist[t.a]=byArtist[t.a]||[]).push(t);});
+    html+=`<div class="no-bpm-toggle" onclick="this.nextSibling.classList.toggle('open');this.textContent=(this.nextSibling.classList.contains('open')?'▼ ':'▶ ')+this.textContent.slice(2)">▶ ${unknown.length} untagged tracks</div><div class="no-bpm-inner">`;
+    Object.entries(byArtist).sort(([a],[b])=>ARTISTS[a].n.localeCompare(ARTISTS[b].n)).forEach(([code,tl])=>{
+      const a=ARTISTS[code];
+      html+=`<div class="sect-head">${a.n}</div>`;
+      tl.forEach(t=>{
+        html+=`<div class="row" onclick="add(${t.id})">
+          <span class="bv uk">?</span>
+          <div class="ad" style="background:${a.c}"></div>
+          <div class="ti"><div class="tn">${t.n}</div><div class="ta">${t.al}</div></div>
+          <button class="ab" onclick="event.stopPropagation();add(${t.id})">+</button>
+        </div>`;
+      });
+    });
+    html+='</div>';
+  }
+
+  document.getElementById('lib-body').innerHTML = html;
+}
+
+function renderSet(){
+  if(!setList.length){
+    document.getElementById('set-body').innerHTML='<div class="empty">click tracks to build your set<br>or hit auto build</div>';
+    stats();return;
+  }
+  let html='';
+  setList.forEach((t,i)=>{
+    const a=ARTISTS[t.a];
+    html+=`<div class="set-row">
+      <div class="mv"><button class="mb" onclick="mv(${i},-1)">▲</button><button class="mb" onclick="mv(${i},1)">▼</button></div>
+      <span class="sp">${String(i+1).padStart(2,'0')}</span>
+      <span class="sb">${t.b??'?'}</span>
+      <div class="ad" style="background:${a.c}"></div>
+      <div class="ti"><div class="tn">${t.n}</div><div class="ta">${a.n} · ${fDur(t.d)}</div></div>
+      <button class="rb" onclick="rm(${t.id})">✕</button>
+    </div>`;
+    if(i<setList.length-1){
+      const nx=setList[i+1];
+      if(t.b!=null&&nx.b!=null){
+        const d=nx.b-t.b,s=d>0?'+':'',col=tColor(d);
+        html+=`<div class="tgap"><div class="tbar" style="background:${col};opacity:.5"></div><span class="tlbl" style="color:${col}">${s}${d} BPM</span></div>`;
+      } else {
+        html+=`<div class="tgap"><div class="tbar" style="background:#1e1808;opacity:.4"></div><span class="tlbl" style="color:#2a2010">—</span></div>`;
+      }
+    }
+  });
+  document.getElementById('set-body').innerHTML=html;
+  stats();
+}
+
+function stats(){
+  const n=setList.length;
+  document.getElementById('s0').textContent=n;
+  document.getElementById('set-ct').textContent=n+' track'+(n!==1?'s':'');
+  if(!n){['s1','s2','s3'].forEach(i=>document.getElementById(i).textContent='—');return;}
+  document.getElementById('s1').textContent=fTotal(setList.reduce((s,t)=>s+t.d,0));
+  const bpms=setList.filter(t=>t.b!=null).map(t=>t.b);
+  if(bpms.length){
+    document.getElementById('s2').textContent=Math.min(...bpms)+'–'+Math.max(...bpms);
+    document.getElementById('s3').textContent=Math.round(bpms.reduce((a,b)=>a+b,0)/bpms.length);
+  } else {
+    document.getElementById('s2').textContent='—';
+    document.getElementById('s3').textContent='—';
+  }
+}
+
+function add(id){
+  if(setList.find(t=>t.id===id))return;
+  setList.push(TRACKS.find(t=>t.id===id));
+  renderLib();renderSet();
+}
+function rm(id){setList=setList.filter(t=>t.id!==id);renderLib();renderSet();}
+function mv(i,d){const j=i+d;if(j<0||j>=setList.length)return;[setList[i],setList[j]]=[setList[j],setList[i]];renderSet();}
+function clearSet(){setList=[];renderLib();renderSet();}
+
+function autoSet(){
+  setList=[];
+  const known=TRACKS.filter(t=>t.b!=null).sort((a,b)=>a.b-b.b);
+  const pick=(arr,n)=>{const used=new Set(setList.map(t=>t.id));return arr.filter(t=>!used.has(t.id)).slice(0,n);};
+  setList=[
+    ...pick(known.filter(t=>t.b>=77&&t.b<=95),2),
+    ...pick(known.filter(t=>t.b>=95&&t.b<=107),4),
+    ...pick(known.filter(t=>t.b>=107&&t.b<=117),4),
+    ...pick(known.filter(t=>t.b>=117&&t.b<=126),3),
+    ...pick(known.filter(t=>t.b>=126&&t.b<=136),3),
+  ];
+  renderLib();renderSet();
+}
+
+initLegend();initFilters();renderLib();renderSet();
+</script>
+</body>
+</html>
